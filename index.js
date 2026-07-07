@@ -1,37 +1,22 @@
 const express = require('express');
-const cors = require('cors');
-const pool = require('./db');
+const path = require('path');
 const app = express();
+const cors = require('cors');
 
 app.use(cors());
 app.use(express.json());
 
-// Cari Ekleme (POST)
-app.post('/cariler', async (req, res) => {
-  const { cari_kodu, unvan, tip } = req.body;
-  try {
-    const query = 'INSERT INTO cariler (cari_kodu, unvan, tip) VALUES ($1, $2, $3) RETURNING *';
-    const values = [cari_kodu, unvan, tip];
-    const yeniCari = await pool.query(query, values);
-    res.status(201).json(yeniCari.rows[0]);
-  } catch (err) {
-    console.error("HATA (POST):", err.message);
-    res.status(500).json({ hata: err.message });
-  }
+// API Rotaları
+app.get('/cariler', (req, res) => { /* veritabanı sorgun */ });
+app.post('/cariler', (req, res) => { /* veritabanı ekleme */ });
+
+// ÖNEMLİ: Frontend'i render et
+app.use(express.static(path.join(__dirname, 'frontend/dist'))); // veya build
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'frontend/dist', 'index.html'));
 });
 
-// Cari Listeleme (GET)
-app.get('/cariler', async (req, res) => {
-  try {
-    const sonuc = await pool.query('SELECT * FROM cariler ORDER BY id DESC');
-    res.json(sonuc.rows);
-  } catch (err) {
-    console.error("HATA (GET):", err.message);
-    res.status(500).json({ hata: err.message });
-  }
-});
-
-app.listen(3000, () => {
-  console.log("Backend 3000 portunda çalışıyor...");
-});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Sunucu ${PORT} portunda!`));
 
