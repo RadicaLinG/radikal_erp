@@ -1,14 +1,16 @@
-"use client";
+'use client';
 import { useState, useEffect } from 'react';
 
-export default function Page() {
+export default function Home() {
   const [unvan, setUnvan] = useState('');
   const [cariler, setCariler] = useState([]);
 
-  // Veritabanındaki carileri çeken fonksiyon
+  // Backend adresini dinamik algılar
+  const API_URL = typeof window !== 'undefined' ? '' : 'https://radikal-erp.onrender.com';
+
   const fetchCariler = async () => {
     try {
-      const res = await fetch('http://localhost:3000/cariler');
+      const res = await fetch(`${API_URL}/cariler`);
       const data = await res.json();
       setCariler(data);
     } catch (err) {
@@ -16,16 +18,12 @@ export default function Page() {
     }
   };
 
-  // Sayfa ilk yüklendiğinde listeyi getir
-  useEffect(() => {
-    fetchCariler();
-  }, []);
+  useEffect(() => { fetchCariler(); }, []);
 
-  // Yeni cari ekleme işlemi
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await fetch('http://localhost:3000/cariler', {
+      const res = await fetch(`${API_URL}/cariler`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -34,48 +32,26 @@ export default function Page() {
           tip: 'Müşteri' 
         }),
       });
-      setUnvan('');
-      fetchCariler(); // Kayıt sonrası listeyi tazele
+      if (res.ok) {
+        setUnvan('');
+        fetchCariler();
+      }
     } catch (err) {
-      alert('Kayıt sırasında hata oluştu!');
+      alert('Kayıt başarısız: ' + err.message);
     }
   };
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'sans-serif', backgroundColor: '#000', color: '#fff', minHeight: '100vh' }}>
+    <main style={{ padding: '20px' }}>
       <h1>Radikal ERP - Cari Yönetimi</h1>
-      
-      {/* Cari Ekleme Formu */}
-      <form onSubmit={handleSubmit} style={{ marginBottom: '30px', borderBottom: '1px solid #333', paddingBottom: '20px' }}>
-        <input 
-          style={{ padding: '10px', width: '250px', color: '#000', borderRadius: '4px' }}
-          placeholder="Cari Ünvanı giriniz" 
-          value={unvan}
-          onChange={(e) => setUnvan(e.target.value)}
-        />
-        <button type="submit" style={{ marginLeft: '10px', padding: '10px 20px', background: '#0070f3', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-          Kaydet
-        </button>
+      <form onSubmit={handleSubmit}>
+        <input value={unvan} onChange={(e) => setUnvan(e.target.value)} placeholder="Ünvan girin" />
+        <button type="submit">Kaydet</button>
       </form>
-
-      {/* Cari Listesi Tablosu */}
-      <table style={{ width: '100%', borderCollapse: 'collapse', color: '#fff' }}>
-        <thead>
-          <tr style={{ borderBottom: '2px solid #555' }}>
-            <th style={{ textAlign: 'left', padding: '10px' }}>Kod</th>
-            <th style={{ textAlign: 'left', padding: '10px' }}>Ünvan</th>
-          </tr>
-        </thead>
-        <tbody>
-          {cariler.map((cari) => (
-            <tr key={cari.id} style={{ borderBottom: '1px solid #222' }}>
-              <td style={{ padding: '10px' }}>{cari.cari_kodu}</td>
-              <td style={{ padding: '10px' }}>{cari.unvan}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+      <ul>
+        {cariler.map(c => <li key={c.id}>{c.cari_kodu} - {c.unvan}</li>)}
+      </ul>
+    </main>
   );
 }
 
