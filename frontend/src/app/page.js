@@ -1,57 +1,37 @@
-'use client';
-import { useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
 
-export default function Home() {
-  const [unvan, setUnvan] = useState('');
-  const [cariler, setCariler] = useState([]);
+// Supabase bilgilerin
+const SUPABASE_URL = 'https://dkqzpesyvaxabskvrmha.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_2gwZZ6pTgZH3I1zEEzYjxw_tLO8vam5';
 
-  // Backend adresini dinamik algılar
-  const API_URL = typeof window !== 'undefined' ? '' : 'https://radikal-erp.onrender.com';
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  const fetchCariler = async () => {
-    try {
-      const res = await fetch(`${API_URL}/cariler`);
-      const data = await res.json();
-      setCariler(data);
-    } catch (err) {
-      console.error("Veri çekme hatası:", err);
-    }
-  };
-
-  useEffect(() => { fetchCariler(); }, []);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await fetch(`${API_URL}/cariler`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          cari_kodu: 'M-' + Date.now().toString().slice(-4), 
-          unvan: unvan, 
-          tip: 'Müşteri' 
-        }),
-      });
-      if (res.ok) {
-        setUnvan('');
-        fetchCariler();
-      }
-    } catch (err) {
-      alert('Kayıt başarısız: ' + err.message);
-    }
-  };
+export default async function Home() {
+  // Verileri çekmeye çalış
+  const { data: cariler, error } = await supabase.from('cariler').select('*');
 
   return (
-    <main style={{ padding: '20px' }}>
-      <h1>Radikal ERP - Cari Yönetimi</h1>
-      <form onSubmit={handleSubmit}>
-        <input value={unvan} onChange={(e) => setUnvan(e.target.value)} placeholder="Ünvan girin" />
-        <button type="submit">Kaydet</button>
-      </form>
-      <ul>
-        {cariler.map(c => <li key={c.id}>{c.cari_kodu} - {c.unvan}</li>)}
-      </ul>
+    <main style={{ padding: '20px', fontFamily: 'sans-serif' }}>
+      <h1>Radikal ERP - Cari Listesi</h1>
+      
+      {error && (
+        <div style={{ color: 'red' }}>
+          <h3>Veri çekme hatası:</h3>
+          <p>{error.message}</p>
+        </div>
+      )}
+      
+      {!cariler || cariler.length === 0 ? (
+        <p>Henüz kayıtlı cari yok. Supabase üzerinden tabloya veri ekleyebilirsin.</p>
+      ) : (
+        <ul>
+          {cariler.map((cari) => (
+            <li key={cari.id} style={{ marginBottom: '10px' }}>
+              <strong>{cari.unvan}</strong> (Kod: {cari.cari_kodu})
+            </li>
+          ))}
+        </ul>
+      )}
     </main>
   );
 }
-
