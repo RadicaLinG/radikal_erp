@@ -1,20 +1,16 @@
 const express = require('express');
 const path = require('path');
 const app = express();
-const cors = require('cors');
 
-app.use(cors());
-app.use(express.json());
-
-// Frontend'i servis et (Build edilmiş hali)
+// Next.js'in ürettiği statik dosyaları servis et
 app.use(express.static(path.join(__dirname, 'frontend/out')));
 
-// Hata yönetimi eklenmiş rota yönlendirmesi
-app.get('*', (req, res) => {
-  try {
+// Hata alan '*' yerine, her isteği index.html'e yönlendiren alternatif yöntem
+app.use((req, res, next) => {
+  if (!req.path.startsWith('/api')) {
     res.sendFile(path.join(__dirname, 'frontend/out', 'index.html'));
-  } catch (err) {
-    res.status(500).send("Sayfa yüklenirken bir hata oluştu.");
+  } else {
+    next();
   }
 });
 
